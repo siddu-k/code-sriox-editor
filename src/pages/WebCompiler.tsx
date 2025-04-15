@@ -5,11 +5,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from "sonner";
 
-// Language configurations
+// Language configurations - updating IDs to match example
 const LANGUAGES = [
-  { id: 52, name: 'Python', defaultCode: 'print("Hello, World!")' },
+  { id: 71, name: 'Python', defaultCode: 'print("Hello, World!")' },
   { id: 63, name: 'JavaScript', defaultCode: 'console.log("Hello, World!");' },
-  { id: 50, name: 'C', defaultCode: '#include <stdio.h>\n\nint main() {\n    printf("Hello, World!");\n    return 0;\n}' }
+  { id: 54, name: 'C++', defaultCode: '#include <iostream>\n\nint main() {\n    std::cout << "Hello, World!";\n    return 0;\n}' },
+  { id: 62, name: 'Java', defaultCode: 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}' }
 ];
 
 const WebCompiler: React.FC = () => {
@@ -26,67 +27,34 @@ const WebCompiler: React.FC = () => {
     }
   };
 
-  const checkSubmissionStatus = async (token: string): Promise<any> => {
-    try {
-      const response = await fetch(`https://code.sriox.com/submissions/${token}?base64_encoded=false`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-      return await response.json();
-    } catch (error) {
-      console.error('Error checking submission status:', error);
-      throw error;
-    }
-  };
-
   const handleCodeSubmit = async () => {
     setIsLoading(true);
     setOutput('Running your code...');
     
     try {
-      // Step 1: Create submission
-      const submitResponse = await fetch('https://code.sriox.com/submissions', {
+      // Make a single API call with wait=true parameter
+      const response = await fetch('https://code.sriox.com/submissions?base64_encoded=false&wait=true', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           language_id: language.id,
-          source_code: code,
-          stdin: '' // Optional input
+          source_code: code
         })
       });
 
-      const submitResult = await submitResponse.json();
+      const result = await response.json();
       
-      if (!submitResult.token) {
-        throw new Error('No submission token received');
-      }
-      
-      // Step 2: Poll for results
-      let result = await checkSubmissionStatus(submitResult.token);
-      let attempts = 0;
-      const maxAttempts = 10;
-      
-      // Poll until the status is not "Processing" or we reach max attempts
-      while (
-        result.status?.description === "Processing" && 
-        attempts < maxAttempts
-      ) {
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
-        result = await checkSubmissionStatus(submitResult.token);
-        attempts++;
-      }
-
       // Handle the result
       if (result.status?.id >= 6) { // Error statuses start at 6
-        setOutput(`Error: ${result.status.description}\n${result.stderr || ''}`);
+        setOutput(`Error: ${result.status.description}\n${result.stderr || result.compile_output || ''}`);
       } else if (result.stdout) {
         setOutput(result.stdout);
       } else if (result.stderr) {
         setOutput(result.stderr);
+      } else if (result.compile_output) {
+        setOutput(result.compile_output);
       } else {
         setOutput('No output');
       }

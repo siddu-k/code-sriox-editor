@@ -32,15 +32,15 @@ const WebCompiler: React.FC = () => {
     setOutput('Running your code...');
     
     try {
-      // Make a single API call with wait=true parameter
-      const response = await fetch('https://code.sriox.com/submissions?base64_encoded=false&wait=true', {
+      // Make a single API call with base64_encoded=true
+      const response = await fetch('https://code.sriox.com/submissions?base64_encoded=true&wait=true', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           language_id: language.id,
-          source_code: code
+          source_code: btoa(code) // Base64 encode the source code
         })
       });
 
@@ -48,13 +48,17 @@ const WebCompiler: React.FC = () => {
       
       // Handle the result
       if (result.status?.id >= 6) { // Error statuses start at 6
-        setOutput(`Error: ${result.status.description}\n${result.stderr || result.compile_output || ''}`);
+        // Decode base64 output
+        const stderr = result.stderr ? atob(result.stderr) : '';
+        const compileOutput = result.compile_output ? atob(result.compile_output) : '';
+        setOutput(`Error: ${result.status.description}\n${stderr || compileOutput || ''}`);
       } else if (result.stdout) {
-        setOutput(result.stdout);
+        // Decode base64 output
+        setOutput(atob(result.stdout));
       } else if (result.stderr) {
-        setOutput(result.stderr);
+        setOutput(atob(result.stderr));
       } else if (result.compile_output) {
-        setOutput(result.compile_output);
+        setOutput(atob(result.compile_output));
       } else {
         setOutput('No output');
       }

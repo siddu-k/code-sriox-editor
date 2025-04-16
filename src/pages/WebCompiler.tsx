@@ -1,4 +1,6 @@
+
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from "sonner";
@@ -18,7 +20,15 @@ const LANGUAGES = [
   { id: 74, name: 'TypeScript', defaultCode: 'console.log("Hello, World!");', prismLang: 'typescript' },
   { id: 82, name: 'SQL', defaultCode: 'SELECT "Hello, World!" as message;', prismLang: 'sql' },
   { id: 50, name: 'C#', defaultCode: 'using System;\n\nclass Program {\n    static void Main() {\n        Console.WriteLine("Hello, World!");\n    }\n}', prismLang: 'csharp' },
-  { id: 68, name: 'PHP', defaultCode: '<?php\necho "Hello, World!";\n?>', prismLang: 'php' }
+  { id: 68, name: 'PHP', defaultCode: '<?php\necho "Hello, World!";\n?>', prismLang: 'php' },
+  { id: 73, name: 'Rust', defaultCode: 'fn main() {\n    println!("Hello, World!");\n}', prismLang: 'rust' },
+  { id: 83, name: 'Swift', defaultCode: 'print("Hello, World!")', prismLang: 'swift' },
+  { id: 52, name: 'Clojure', defaultCode: '(println "Hello, World!")', prismLang: 'clojure' },
+  { id: 61, name: 'Haskell', defaultCode: 'main = putStrLn "Hello, World!"', prismLang: 'haskell' },
+  { id: 79, name: 'Objective-C', defaultCode: '#import <Foundation/Foundation.h>\n\nint main() {\n    @autoreleasepool {\n        NSLog(@"Hello, World!");\n    }\n    return 0;\n}', prismLang: 'objectivec' },
+  { id: 67, name: 'Pascal', defaultCode: 'program HelloWorld;\nbegin\n  writeln(\'Hello, World!\');\nend.', prismLang: 'pascal' },
+  { id: 85, name: 'Perl', defaultCode: 'print "Hello, World!\\n";', prismLang: 'perl' },
+  { id: 75, name: 'R', defaultCode: 'cat("Hello, World!")', prismLang: 'r' }
 ];
 
 const WebCompiler: React.FC = () => {
@@ -33,6 +43,10 @@ const WebCompiler: React.FC = () => {
       setLanguage(selectedLang);
       setCode(selectedLang.defaultCode);
     }
+  };
+
+  const handleCodeChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setCode(e.target.value);
   };
 
   const handleCodeDownload = () => {
@@ -94,8 +108,13 @@ const WebCompiler: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4 space-y-4 bg-background text-foreground min-h-screen">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">codeer<span className="text-primary/70">.org</span> Code Editor</h1>
+        <Link to="/" className="text-sm text-primary/80 hover:text-primary transition-colors">← Back to Home</Link>
+      </div>
+      
       <div className="flex flex-wrap items-center gap-4 justify-between">
-        <div className="flex gap-4">
+        <div className="flex gap-4 flex-wrap">
           <Select onValueChange={handleLanguageChange} defaultValue={language.name}>
             <SelectTrigger className="w-[180px] bg-background">
               <SelectValue placeholder="Select Language" />
@@ -129,34 +148,48 @@ const WebCompiler: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="border rounded-lg p-2 bg-black/90 min-h-[400px]">
-          <Highlight
-            theme={themes.nightOwl}
-            code={code}
-            language={language.prismLang}
-          >
-            {({ className, style, tokens, getLineProps, getTokenProps }) => (
-              <pre className="p-4 overflow-auto h-full m-0" style={style}>
-                {tokens.map((line, i) => (
-                  <div key={i} {...getLineProps({ line })}>
-                    <span className="text-gray-500 mr-4 select-none">
-                      {(i + 1).toString().padStart(2, '0')}
-                    </span>
-                    {line.map((token, key) => (
-                      <span key={key} {...getTokenProps({ token })} />
-                    ))}
-                  </div>
-                ))}
-              </pre>
-            )}
-          </Highlight>
+        <div className="border rounded-lg p-2 bg-black/90 min-h-[500px]">
+          <div className="relative h-full">
+            <textarea
+              value={code}
+              onChange={handleCodeChange}
+              className="absolute inset-0 w-full h-full p-4 font-mono text-sm resize-none bg-transparent text-transparent caret-white z-10"
+              spellCheck="false"
+            />
+            <Highlight
+              theme={themes.nightOwl}
+              code={code}
+              language={language.prismLang}
+            >
+              {({ className, style, tokens, getLineProps, getTokenProps }) => (
+                <pre className="p-4 overflow-auto h-full m-0 pointer-events-none" style={style}>
+                  {tokens.map((line, i) => (
+                    <div key={i} {...getLineProps({ line })}>
+                      <span className="text-gray-500 mr-4 select-none">
+                        {(i + 1).toString().padStart(2, '0')}
+                      </span>
+                      {line.map((token, key) => (
+                        <span key={key} {...getTokenProps({ token })} />
+                      ))}
+                    </div>
+                  ))}
+                </pre>
+              )}
+            </Highlight>
+          </div>
         </div>
         
         <div className="border rounded-lg p-2 bg-black/90">
-          <pre className="text-sm overflow-auto h-[400px] whitespace-pre-wrap p-4 text-green-400">
+          <pre className="text-sm overflow-auto h-[500px] whitespace-pre-wrap p-4 text-green-400">
             {output || 'Output will appear here...'}
           </pre>
         </div>
+      </div>
+      
+      <div className="mt-8 border-t border-border pt-4 text-center">
+        <p className="text-sm text-muted-foreground">
+          © 2025 <span className="font-medium">codeer.org</span> • Run code in 20+ programming languages
+        </p>
       </div>
     </div>
   );

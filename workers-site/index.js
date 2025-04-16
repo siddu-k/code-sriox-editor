@@ -1,0 +1,1 @@
+addEventListener("fetch", event => { event.respondWith(handleRequest(event.request)) }); async function handleRequest(request) { return await getAssetFromKV(event, {mapRequestToAsset: req => new Request(`${new URL(req.url).origin}/index.html`, req)}); }

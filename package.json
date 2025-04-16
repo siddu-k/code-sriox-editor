@@ -5,12 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && npm run build:worker",
     "build:dev": "vite build --mode development",
+    "build:worker": "mkdir -p workers-site && echo 'addEventListener(\"fetch\", event => { event.respondWith(handleRequest(event.request)) }); async function handleRequest(request) { return await getAssetFromKV(event, {mapRequestToAsset: req => new Request(`${new URL(req.url).origin}/index.html`, req)}); }' > workers-site/index.js",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build && wrangler pages publish dist",
+    "deploy:dev": "npm run build:dev && wrangler pages publish dist --branch=dev"
   },
   "dependencies": {
+    "@cloudflare/kv-asset-handler": "^0.4.0",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
@@ -79,6 +83,7 @@
     "tailwindcss": "^3.4.11",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
-    "vite": "^5.4.1"
+    "vite": "^5.4.1",
+    "wrangler": "^4.11.1"
   }
 }

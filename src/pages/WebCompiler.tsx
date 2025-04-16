@@ -1,16 +1,24 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { toast } from "sonner";
+import { Download } from 'lucide-react';
+import { Highlight, themes } from 'prism-react-renderer';
 
-// Language configurations - updating IDs to match example
+// Extended language configurations with all Judge0 supported languages
 const LANGUAGES = [
-  { id: 71, name: 'Python', defaultCode: 'print("Hello, World!")' },
-  { id: 63, name: 'JavaScript', defaultCode: 'console.log("Hello, World!");' },
-  { id: 54, name: 'C++', defaultCode: '#include <iostream>\n\nint main() {\n    std::cout << "Hello, World!";\n    return 0;\n}' },
-  { id: 62, name: 'Java', defaultCode: 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}' }
+  { id: 71, name: 'Python', defaultCode: 'print("Hello, World!")', prismLang: 'python' },
+  { id: 63, name: 'JavaScript', defaultCode: 'console.log("Hello, World!");', prismLang: 'javascript' },
+  { id: 54, name: 'C++', defaultCode: '#include <iostream>\n\nint main() {\n    std::cout << "Hello, World!";\n    return 0;\n}', prismLang: 'cpp' },
+  { id: 62, name: 'Java', defaultCode: 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}', prismLang: 'java' },
+  { id: 51, name: 'C', defaultCode: '#include <stdio.h>\n\nint main() {\n    printf("Hello, World!");\n    return 0;\n}', prismLang: 'c' },
+  { id: 60, name: 'Go', defaultCode: 'package main\n\nimport "fmt"\n\nfunc main() {\n    fmt.Println("Hello, World!")\n}', prismLang: 'go' },
+  { id: 78, name: 'Kotlin', defaultCode: 'fun main() {\n    println("Hello, World!")\n}', prismLang: 'kotlin' },
+  { id: 72, name: 'Ruby', defaultCode: 'puts "Hello, World!"', prismLang: 'ruby' },
+  { id: 74, name: 'TypeScript', defaultCode: 'console.log("Hello, World!");', prismLang: 'typescript' },
+  { id: 82, name: 'SQL', defaultCode: 'SELECT "Hello, World!" as message;', prismLang: 'sql' },
+  { id: 50, name: 'C#', defaultCode: 'using System;\n\nclass Program {\n    static void Main() {\n        Console.WriteLine("Hello, World!");\n    }\n}', prismLang: 'csharp' },
+  { id: 68, name: 'PHP', defaultCode: '<?php\necho "Hello, World!";\n?>', prismLang: 'php' }
 ];
 
 const WebCompiler: React.FC = () => {
@@ -25,6 +33,19 @@ const WebCompiler: React.FC = () => {
       setLanguage(selectedLang);
       setCode(selectedLang.defaultCode);
     }
+  };
+
+  const handleCodeDownload = () => {
+    const blob = new Blob([code], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `code.${language.prismLang}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    toast.success('Code downloaded successfully!');
   };
 
   const handleCodeSubmit = async () => {
@@ -72,42 +93,67 @@ const WebCompiler: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto p-4 space-y-4">
-      <div className="flex flex-wrap items-center gap-4">
-        <Select onValueChange={handleLanguageChange} defaultValue={language.name}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select Language" />
-          </SelectTrigger>
-          <SelectContent>
-            {LANGUAGES.map(lang => (
-              <SelectItem key={lang.id} value={lang.name}>
-                {lang.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        
-        <Button 
-          onClick={handleCodeSubmit} 
-          disabled={isLoading}
-          variant="default"
+    <div className="container mx-auto p-4 space-y-4 bg-background text-foreground min-h-screen">
+      <div className="flex flex-wrap items-center gap-4 justify-between">
+        <div className="flex gap-4">
+          <Select onValueChange={handleLanguageChange} defaultValue={language.name}>
+            <SelectTrigger className="w-[180px] bg-background">
+              <SelectValue placeholder="Select Language" />
+            </SelectTrigger>
+            <SelectContent>
+              {LANGUAGES.map(lang => (
+                <SelectItem key={lang.id} value={lang.name}>
+                  {lang.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Button 
+            onClick={handleCodeSubmit} 
+            disabled={isLoading}
+            variant="default"
+          >
+            {isLoading ? 'Running...' : 'Run Code'}
+          </Button>
+        </div>
+
+        <Button
+          onClick={handleCodeDownload}
+          variant="outline"
+          className="gap-2"
         >
-          {isLoading ? 'Running...' : 'Run Code'}
+          <Download className="h-4 w-4" />
+          Download Code
         </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="border rounded p-2 bg-background">
-          <Textarea
-            className="w-full h-64 font-mono text-sm resize-none"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder="Enter your code here..."
-          />
+        <div className="border rounded-lg p-2 bg-black/90 min-h-[400px]">
+          <Highlight
+            theme={themes.nightOwl}
+            code={code}
+            language={language.prismLang}
+          >
+            {({ className, style, tokens, getLineProps, getTokenProps }) => (
+              <pre className="p-4 overflow-auto h-full m-0" style={style}>
+                {tokens.map((line, i) => (
+                  <div key={i} {...getLineProps({ line })}>
+                    <span className="text-gray-500 mr-4 select-none">
+                      {(i + 1).toString().padStart(2, '0')}
+                    </span>
+                    {line.map((token, key) => (
+                      <span key={key} {...getTokenProps({ token })} />
+                    ))}
+                  </div>
+                ))}
+              </pre>
+            )}
+          </Highlight>
         </div>
         
-        <div className="border rounded p-2 bg-background">
-          <pre className="text-sm overflow-auto h-64 whitespace-pre-wrap p-2">
+        <div className="border rounded-lg p-2 bg-black/90">
+          <pre className="text-sm overflow-auto h-[400px] whitespace-pre-wrap p-4 text-green-400">
             {output || 'Output will appear here...'}
           </pre>
         </div>

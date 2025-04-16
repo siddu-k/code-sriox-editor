@@ -4,11 +4,13 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from "sonner";
-import { Copy, Download, Settings } from 'lucide-react';
+import { Copy, Download, Settings, LayoutPanelTop, Monitor } from 'lucide-react';
 import { Highlight, themes } from 'prism-react-renderer';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Slider } from '@/components/ui/slider';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Extended language configurations with all Judge0 supported languages
 const LANGUAGES = [
@@ -39,12 +41,23 @@ const LANGUAGES = [
   { id: 57, name: 'Elixir', defaultCode: 'IO.puts "Hello, World!"', prismLang: 'elixir', logo: '💧' }
 ];
 
+// Editor themes options
+const EDITOR_THEMES = [
+  { name: 'Night Owl', value: 'nightOwl', theme: themes.nightOwl },
+  { name: 'Dracula', value: 'dracula', theme: themes.dracula },
+  { name: 'VS Dark', value: 'vsDark', theme: themes.vsDark },
+  { name: 'One Dark', value: 'oneDark', theme: themes.oneDark },
+];
+
 const WebCompiler: React.FC = () => {
   const [language, setLanguage] = useState(LANGUAGES[0]);
   const [code, setCode] = useState(language.defaultCode);
   const [output, setOutput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [uiSize, setUiSize] = useState(100);
+  const [editorTheme, setEditorTheme] = useState(EDITOR_THEMES[0]);
+  const [isClassroomView, setIsClassroomView] = useState(false);
+  const [panelSize, setPanelSize] = useState(50);
   const isMobile = useIsMobile();
   
   // Use smaller UI elements by default for mobile
@@ -82,6 +95,13 @@ const WebCompiler: React.FC = () => {
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
     toast.success('Code downloaded successfully!');
+  };
+
+  const handleThemeChange = (themeName: string) => {
+    const selectedTheme = EDITOR_THEMES.find(t => t.value === themeName);
+    if (selectedTheme) {
+      setEditorTheme(selectedTheme);
+    }
   };
 
   const handleCodeSubmit = async () => {
@@ -137,6 +157,11 @@ const WebCompiler: React.FC = () => {
   const buttonHeight = `h-${Math.round(getSize(10))}`;
   const buttonPadding = `px-${Math.round(getSize(4))}`;
   const fontSize = `text-${uiSize < 90 ? 'sm' : 'base'}`;
+  
+  // Toggle classroom view
+  const toggleClassroomView = () => {
+    setIsClassroomView(!isClassroomView);
+  };
 
   return (
     <div className="container mx-auto p-4 space-y-4 bg-background text-foreground min-h-screen">
@@ -176,6 +201,17 @@ const WebCompiler: React.FC = () => {
 
         <div className="flex gap-2">
           <Button
+            onClick={toggleClassroomView}
+            variant="outline"
+            size="icon"
+            className={`${buttonHeight} aspect-square animate-fade-in`}
+            style={{ transform: `scale(${uiSize/100})`, transformOrigin: 'right' }}
+            title={isClassroomView ? "Exit Classroom View" : "Enter Classroom View"}
+          >
+            <Monitor className="h-4 w-4" />
+          </Button>
+          
+          <Button
             onClick={handleCodeCopy}
             variant="outline"
             size="icon"
@@ -213,79 +249,196 @@ const WebCompiler: React.FC = () => {
                   Customize your coding experience
                 </SheetDescription>
               </SheetHeader>
+              
               <div className="mt-6">
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="mb-2 text-sm font-medium">UI Size</h3>
-                    <Slider
-                      defaultValue={[uiSize]}
-                      max={120}
-                      min={60}
-                      step={5}
-                      onValueChange={(value) => setUiSize(value[0])}
-                      className="py-4"
-                    />
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>Small</span>
-                      <span>Default</span>
-                      <span>Large</span>
+                <Tabs defaultValue="general" className="w-full">
+                  <TabsList className="grid grid-cols-3 mb-4">
+                    <TabsTrigger value="general">General</TabsTrigger>
+                    <TabsTrigger value="appearance">Appearance</TabsTrigger>
+                    <TabsTrigger value="layout">Layout</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="general" className="space-y-4">
+                    <div>
+                      <h3 className="mb-2 text-sm font-medium">UI Size</h3>
+                      <Slider
+                        defaultValue={[uiSize]}
+                        max={120}
+                        min={60}
+                        step={5}
+                        onValueChange={(value) => setUiSize(value[0])}
+                        className="py-4"
+                      />
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>Small</span>
+                        <span>Default</span>
+                        <span>Large</span>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="appearance" className="space-y-4">
+                    <div>
+                      <h3 className="mb-2 text-sm font-medium">Editor Theme</h3>
+                      <Select 
+                        defaultValue={editorTheme.value} 
+                        onValueChange={handleThemeChange}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select theme" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {EDITOR_THEMES.map((theme) => (
+                            <SelectItem key={theme.value} value={theme.value}>
+                              {theme.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="layout" className="space-y-4">
+                    <div>
+                      <h3 className="mb-2 text-sm font-medium">Panel Split</h3>
+                      <Slider
+                        defaultValue={[panelSize]}
+                        max={80}
+                        min={20}
+                        step={5}
+                        onValueChange={(value) => setPanelSize(value[0])}
+                        className="py-4"
+                      />
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>More Code</span>
+                        <span>Equal</span>
+                        <span>More Output</span>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="mb-2 text-sm font-medium">View Mode</h3>
+                      <Button 
+                        onClick={toggleClassroomView}
+                        variant={isClassroomView ? "default" : "outline"}
+                        className="w-full"
+                      >
+                        <LayoutPanelTop className="mr-2 h-4 w-4" />
+                        {isClassroomView ? "Exit Classroom View" : "Enter Classroom View"}
+                      </Button>
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </div>
             </SheetContent>
           </Sheet>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in">
-        <div className="border rounded-lg p-2 bg-black/90 min-h-[500px]">
-          <div className="relative h-full group">
-            <textarea
-              value={code}
-              onChange={handleCodeChange}
-              className="absolute inset-0 w-full h-full p-4 font-mono text-sm resize-none bg-transparent text-transparent caret-white z-10"
-              spellCheck="false"
-            />
-            <Highlight
-              theme={themes.nightOwl}
-              code={code}
-              language={language.prismLang}
-            >
-              {({ className, style, tokens, getLineProps, getTokenProps }) => (
-                <pre className="p-4 overflow-auto h-full m-0 pointer-events-none" style={style}>
-                  {tokens.map((line, i) => (
-                    <div key={i} {...getLineProps({ line })}>
-                      <span className="text-gray-500 mr-4 select-none">
-                        {(i + 1).toString().padStart(2, '0')}
-                      </span>
-                      {line.map((token, key) => (
-                        <span key={key} {...getTokenProps({ token })} />
+      {isClassroomView ? (
+        <div className="w-full h-[calc(100vh-200px)] animate-fade-in">
+          <ResizablePanelGroup
+            direction="vertical"
+            className="border rounded-lg min-h-[500px] bg-black/90"
+          >
+            <ResizablePanel defaultSize={70} minSize={30}>
+              <div className="relative h-full group">
+                <textarea
+                  value={code}
+                  onChange={handleCodeChange}
+                  className="absolute inset-0 w-full h-full p-4 font-mono text-sm resize-none bg-transparent text-transparent caret-white z-10"
+                  spellCheck="false"
+                />
+                <Highlight
+                  theme={editorTheme.theme}
+                  code={code}
+                  language={language.prismLang}
+                >
+                  {({ className, style, tokens, getLineProps, getTokenProps }) => (
+                    <pre className="p-4 overflow-auto h-full m-0 pointer-events-none" style={style}>
+                      {tokens.map((line, i) => (
+                        <div key={i} {...getLineProps({ line })}>
+                          <span className="text-gray-500 mr-4 select-none">
+                            {(i + 1).toString().padStart(2, '0')}
+                          </span>
+                          {line.map((token, key) => (
+                            <span key={key} {...getTokenProps({ token })} />
+                          ))}
+                        </div>
                       ))}
-                    </div>
-                  ))}
-                </pre>
-              )}
-            </Highlight>
-            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button 
-                onClick={handleCodeCopy} 
-                variant="secondary" 
-                size="sm" 
-                className="h-7 w-7 p-0"
+                    </pre>
+                  )}
+                </Highlight>
+                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button 
+                    onClick={handleCodeCopy} 
+                    variant="secondary" 
+                    size="sm" 
+                    className="h-7 w-7 p-0"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </ResizablePanel>
+            <ResizableHandle />
+            <ResizablePanel defaultSize={30}>
+              <pre className="text-sm overflow-auto h-full whitespace-pre-wrap p-4 text-green-400">
+                {output || 'Output will appear here...'}
+              </pre>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in">
+          <div className="border rounded-lg p-2 bg-black/90 min-h-[500px]" style={{ flex: panelSize < 50 ? panelSize/100 * 2 : 1 }}>
+            <div className="relative h-full group">
+              <textarea
+                value={code}
+                onChange={handleCodeChange}
+                className="absolute inset-0 w-full h-full p-4 font-mono text-sm resize-none bg-transparent text-transparent caret-white z-10"
+                spellCheck="false"
+              />
+              <Highlight
+                theme={editorTheme.theme}
+                code={code}
+                language={language.prismLang}
               >
-                <Copy className="h-3 w-3" />
-              </Button>
+                {({ className, style, tokens, getLineProps, getTokenProps }) => (
+                  <pre className="p-4 overflow-auto h-full m-0 pointer-events-none" style={style}>
+                    {tokens.map((line, i) => (
+                      <div key={i} {...getLineProps({ line })}>
+                        <span className="text-gray-500 mr-4 select-none">
+                          {(i + 1).toString().padStart(2, '0')}
+                        </span>
+                        {line.map((token, key) => (
+                          <span key={key} {...getTokenProps({ token })} />
+                        ))}
+                      </div>
+                    ))}
+                  </pre>
+                )}
+              </Highlight>
+              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button 
+                  onClick={handleCodeCopy} 
+                  variant="secondary" 
+                  size="sm" 
+                  className="h-7 w-7 p-0"
+                >
+                  <Copy className="h-3 w-3" />
+                </Button>
+              </div>
             </div>
           </div>
+          
+          <div className="border rounded-lg p-2 bg-black/90" style={{ flex: panelSize > 50 ? (100 - panelSize)/100 * 2 : 1 }}>
+            <pre className="text-sm overflow-auto h-[500px] whitespace-pre-wrap p-4 text-green-400">
+              {output || 'Output will appear here...'}
+            </pre>
+          </div>
         </div>
-        
-        <div className="border rounded-lg p-2 bg-black/90">
-          <pre className="text-sm overflow-auto h-[500px] whitespace-pre-wrap p-4 text-green-400">
-            {output || 'Output will appear here...'}
-          </pre>
-        </div>
-      </div>
+      )}
       
       <div className="mt-8 border-t border-border pt-4 text-center">
         <p className="text-sm text-muted-foreground">

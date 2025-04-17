@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { ArrowRight, Code, Download, Globe, Terminal, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -313,7 +312,7 @@ const Index = () => {
       </footer>
 
       {/* Add CSS animations */}
-      <style jsx="true">{`
+      <style>{`
         @keyframes fadeIn {
           from { opacity: 0; }
           to { opacity: 1; }

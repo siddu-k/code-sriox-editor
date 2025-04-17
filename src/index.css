@@ -93,6 +93,8 @@
 .draggable-terminal {
   cursor: grab;
   transition: box-shadow 0.3s;
+  position: absolute !important;
+  z-index: 100 !important;
 }
 
 .draggable-terminal:active {
@@ -103,6 +105,12 @@
 /* Terminal styles */
 .terminal-drag-handle {
   cursor: grab;
+  user-select: none; /* Prevent text selection */
+  touch-action: none; /* Improve touch experience */
+}
+
+.terminal-drag-handle:active {
+  cursor: grabbing;
 }
 
 .resize-handle {

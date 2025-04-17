@@ -98,6 +98,19 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
 
   return (
     <div className="relative h-full group" onClick={handleFocus}>
+      {/* Copy button moved to top of editor */}
+      <div className="absolute top-2 left-2 z-20 opacity-70 hover:opacity-100 transition-opacity">
+        <Button 
+          onClick={handleCopy} 
+          variant="secondary" 
+          size="sm" 
+          className="h-7 px-2 text-xs flex items-center gap-1"
+        >
+          {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+          {copied ? 'Copied' : 'Copy'}
+        </Button>
+      </div>
+      
       <textarea
         ref={textAreaRef}
         value={code}
@@ -138,16 +151,6 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
           </pre>
         )}
       </Highlight>
-      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Button 
-          onClick={handleCopy} 
-          variant="secondary" 
-          size="sm" 
-          className="h-7 w-7 p-0"
-        >
-          {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-        </Button>
-      </div>
     </div>
   );
 };

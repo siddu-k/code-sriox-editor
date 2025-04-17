@@ -21,18 +21,19 @@ const Terminal: React.FC<TerminalProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [size, setSize] = useState({ width: 350, height: 300 });
   const terminalRef = useRef<HTMLDivElement>(null);
+  const dragHandleRef = useRef<HTMLDivElement>(null);
   
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!isDraggable) return;
     
-    // Only initiate drag if clicked on the header, not the resize handle
-    if ((e.target as HTMLElement).closest('.resize-handle')) return;
-    
-    setIsDragging(true);
-    e.preventDefault(); // Prevent text selection during drag
+    // Only initiate drag if clicked on the header
+    if (dragHandleRef.current && dragHandleRef.current.contains(e.target as Node)) {
+      setIsDragging(true);
+      e.preventDefault(); // Prevent text selection during drag
+    }
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handleMouseMove = (e: MouseEvent) => {
     if (!isDragging || !isDraggable) return;
     
     setPosition({
@@ -46,15 +47,24 @@ const Terminal: React.FC<TerminalProps> = ({
   };
 
   useEffect(() => {
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      handleMouseMove(e);
+    };
+    
     const handleGlobalMouseUp = () => {
       setIsDragging(false);
     };
     
-    window.addEventListener('mouseup', handleGlobalMouseUp);
+    if (isDragging) {
+      window.addEventListener('mousemove', handleGlobalMouseMove);
+      window.addEventListener('mouseup', handleGlobalMouseUp);
+    }
+    
     return () => {
+      window.removeEventListener('mousemove', handleGlobalMouseMove);
       window.removeEventListener('mouseup', handleGlobalMouseUp);
     };
-  }, []);
+  }, [isDragging, isDraggable]);
 
   useEffect(() => {
     // Save terminal size when resizing ends
@@ -77,6 +87,7 @@ const Terminal: React.FC<TerminalProps> = ({
     };
   }, [isVisible]);
 
+  // If terminal is not visible, don't render anything
   if (!isVisible) return null;
 
   return (
@@ -84,7 +95,6 @@ const Terminal: React.FC<TerminalProps> = ({
       ref={terminalRef}
       className={cn(
         "absolute border rounded-lg p-4 bg-black/90 shadow-lg",
-        isDragging ? "cursor-grabbing" : "cursor-grab",
         isDraggable ? "resize overflow-auto" : "h-[500px] w-full overflow-auto"
       )}
       style={isDraggable ? {
@@ -94,12 +104,15 @@ const Terminal: React.FC<TerminalProps> = ({
         top: `${position.y}px`,
         zIndex: 100,
       } : undefined}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
     >
-      <div className="h-6 bg-black/50 absolute top-0 left-0 right-0 text-xs text-center pt-1 flex items-center justify-between px-2">
-        <span className="terminal-drag-handle flex-1">Terminal {isDraggable && "(drag to move)"}</span>
+      <div 
+        ref={dragHandleRef}
+        className="h-6 bg-black/50 absolute top-0 left-0 right-0 text-xs text-center pt-1 flex items-center justify-between px-2"
+        onMouseDown={handleMouseDown}
+      >
+        <span className={cn("terminal-drag-handle flex-1", isDraggable && "cursor-grab")}>
+          Terminal {isDraggable && "(drag to move)"}
+        </span>
         <Button 
           onClick={onClose}
           variant="ghost" 

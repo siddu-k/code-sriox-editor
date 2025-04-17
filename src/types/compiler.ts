@@ -1,5 +1,5 @@
 
-import { Theme } from 'prism-react-renderer';
+import { themes } from 'prism-react-renderer';
 
 export interface ProgrammingLanguage {
   id: number;
@@ -12,7 +12,7 @@ export interface ProgrammingLanguage {
 export interface EditorTheme {
   name: string;
   value: string;
-  theme: Theme;
+  theme: typeof themes.nightOwl;
 }
 
 export interface CompilerSettings {

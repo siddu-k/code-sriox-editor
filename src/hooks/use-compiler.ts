@@ -23,8 +23,13 @@ export const useCompiler = () => {
   };
 
   const handleCodeCopy = () => {
-    navigator.clipboard.writeText(code);
-    toast.success('Code copied to clipboard!');
+    navigator.clipboard.writeText(code)
+      .then(() => {
+        toast.success('Code copied to clipboard!');
+      })
+      .catch(() => {
+        toast.error('Failed to copy code. Please try manually selecting and copying.');
+      });
   };
 
   const handleCodeDownload = () => {

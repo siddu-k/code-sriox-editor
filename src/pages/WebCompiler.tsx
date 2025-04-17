@@ -1,17 +1,18 @@
 
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Download, Settings, LayoutPanelTop, Monitor } from 'lucide-react';
+import { Download, Settings, LayoutPanelTop, Monitor, Share2, TerminalSquare } from 'lucide-react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { LANGUAGES } from '@/constants/languages';
 import { useCompiler } from '@/hooks/use-compiler';
 import { useCompilerSettings } from '@/hooks/use-compiler-settings';
 import CodeEditor from '@/components/compiler/CodeEditor';
 import SettingsPanel from '@/components/compiler/SettingsPanel';
+import Terminal from '@/components/compiler/Terminal';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 const WebCompiler: React.FC = () => {
   const {
@@ -23,7 +24,8 @@ const WebCompiler: React.FC = () => {
     handleCodeChange,
     handleCodeCopy,
     handleCodeDownload,
-    handleCodeSubmit
+    handleCodeSubmit,
+    handleCodeShare
   } = useCompiler();
 
   const {
@@ -32,37 +34,18 @@ const WebCompiler: React.FC = () => {
     updateUiSize,
     updateEditorTheme,
     toggleClassroomView,
-    updatePanelSize
+    updatePanelSize,
+    toggleTerminalVisibility,
+    showTerminal,
+    hideTerminal
   } = useCompilerSettings();
 
-  const [outputPosition, setOutputPosition] = useState({ x: 20, y: 20 });
-  const [isDragging, setIsDragging] = useState(false);
-  const outputRef = React.useRef<HTMLDivElement>(null);
-  
-  // Draggable terminal functionality for classroom view
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (!settings.isClassroomView) return;
-    setIsDragging(true);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !settings.isClassroomView) return;
-    setOutputPosition({
-      x: Math.max(0, Math.min(e.clientX - 100, window.innerWidth - 300)),
-      y: Math.max(0, Math.min(e.clientY - 20, window.innerHeight - 200))
-    });
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  React.useEffect(() => {
-    window.addEventListener('mouseup', handleMouseUp);
-    return () => {
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, []);
+  // Auto-show terminal when running code
+  useEffect(() => {
+    if (isLoading) {
+      showTerminal();
+    }
+  }, [isLoading]);
 
   const buttonHeight = `h-${Math.round(getSize(10))}`;
   const buttonPadding = `px-${Math.round(getSize(4))}`;
@@ -75,11 +58,17 @@ const WebCompiler: React.FC = () => {
     transition: 'background-color 0.3s, color 0.3s'
   };
 
+  const handleShare = () => {
+    const shareUrl = handleCodeShare();
+    if (shareUrl) {
+      toast.success("Share link copied to clipboard! Link expires after 48 hours.");
+    }
+  };
+
   return (
     <div 
       className="container mx-auto p-4 space-y-4 min-h-screen"
       style={themeStyles}
-      onMouseMove={handleMouseMove}
     >
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold animate-fade-in">codeer<span className="text-primary/70">.org</span> Code Editor</h1>
@@ -113,6 +102,16 @@ const WebCompiler: React.FC = () => {
           >
             {isLoading ? 'Running...' : 'Run Code'}
           </Button>
+          
+          <Button 
+            onClick={toggleTerminalVisibility} 
+            variant="outline"
+            className={`${buttonHeight} ${buttonPadding} ${fontSize} animate-fade-in`}
+            style={{ transform: `scale(${settings.uiSize/100})`, transformOrigin: 'left' }}
+          >
+            <TerminalSquare className="h-4 w-4 mr-2" />
+            {settings.isTerminalVisible ? 'Hide Terminal' : 'Show Terminal'}
+          </Button>
         </div>
 
         <div className="flex gap-2">
@@ -128,11 +127,23 @@ const WebCompiler: React.FC = () => {
           </Button>
           
           <Button
+            onClick={handleShare}
+            variant="outline"
+            size="icon"
+            className={`${buttonHeight} aspect-square animate-fade-in`}
+            style={{ transform: `scale(${settings.uiSize/100})`, transformOrigin: 'right' }}
+            title="Share Code"
+          >
+            <Share2 className="h-4 w-4" />
+          </Button>
+          
+          <Button
             onClick={handleCodeDownload}
             variant="outline"
             size="icon"
             className={`${buttonHeight} aspect-square animate-fade-in`}
             style={{ transform: `scale(${settings.uiSize/100})`, transformOrigin: 'right' }}
+            title="Download Code"
           >
             <Download className="h-4 w-4" />
           </Button>
@@ -163,6 +174,7 @@ const WebCompiler: React.FC = () => {
                   onUpdateTheme={updateEditorTheme}
                   onToggleView={toggleClassroomView}
                   onUpdatePanelSize={updatePanelSize}
+                  onToggleTerminal={toggleTerminalVisibility}
                 />
               </div>
             </SheetContent>
@@ -182,30 +194,14 @@ const WebCompiler: React.FC = () => {
             />
           </div>
           
-          <div 
-            ref={outputRef}
-            className={cn(
-              "absolute border rounded-lg p-4 bg-black/90 shadow-lg",
-              isDragging ? "cursor-grabbing" : "cursor-grab"
-            )}
-            style={{
-              width: '350px',
-              maxHeight: '300px',
-              left: `${outputPosition.x}px`,
-              top: `${outputPosition.y}px`,
-              zIndex: 100,
-              resize: 'both',
-              overflow: 'auto'
-            }}
-            onMouseDown={handleMouseDown}
-          >
-            <div className="h-6 bg-black/50 absolute top-0 left-0 right-0 text-xs text-center pt-1">
-              Terminal (drag to move)
-            </div>
-            <pre className="text-sm overflow-auto whitespace-pre-wrap mt-6 text-green-400">
-              {output || 'Output will appear here...'}
-            </pre>
-          </div>
+          {settings.isTerminalVisible && (
+            <Terminal 
+              output={output}
+              isVisible={settings.isTerminalVisible}
+              onClose={hideTerminal}
+              isDraggable={true}
+            />
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in">
@@ -219,11 +215,16 @@ const WebCompiler: React.FC = () => {
             />
           </div>
           
-          <div className="border rounded-lg p-2 bg-black/90" style={{ flex: settings.panelSize > 50 ? (100 - settings.panelSize)/100 * 2 : 1 }}>
-            <pre className="text-sm overflow-auto h-[500px] whitespace-pre-wrap p-4 text-green-400">
-              {output || 'Output will appear here...'}
-            </pre>
-          </div>
+          {settings.isTerminalVisible && (
+            <div className="border rounded-lg p-2 bg-black/90" style={{ flex: settings.panelSize > 50 ? (100 - settings.panelSize)/100 * 2 : 1 }}>
+              <Terminal 
+                output={output}
+                isVisible={true}
+                onClose={hideTerminal}
+                isDraggable={false}
+              />
+            </div>
+          )}
         </div>
       )}
       

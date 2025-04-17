@@ -4,12 +4,15 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { EditorTheme, CompilerSettings } from '@/types/compiler';
 import { EDITOR_THEMES } from '@/constants/languages';
 
+// Custom black and white theme - we'll add this to the constants in the next step
+
 export const useCompilerSettings = () => {
   const [settings, setSettings] = useState<CompilerSettings>({
     uiSize: 100,
     editorTheme: EDITOR_THEMES[0],
     isClassroomView: false,
-    panelSize: 50
+    panelSize: 50,
+    isTerminalVisible: true
   });
   
   const isMobile = useIsMobile();
@@ -32,7 +35,23 @@ export const useCompilerSettings = () => {
   };
 
   const toggleClassroomView = () => {
-    setSettings(prev => ({ ...prev, isClassroomView: !prev.isClassroomView }));
+    setSettings(prev => ({ 
+      ...prev, 
+      isClassroomView: !prev.isClassroomView,
+      isTerminalVisible: true // Always show terminal when toggling view
+    }));
+  };
+
+  const toggleTerminalVisibility = () => {
+    setSettings(prev => ({ ...prev, isTerminalVisible: !prev.isTerminalVisible }));
+  };
+
+  const showTerminal = () => {
+    setSettings(prev => ({ ...prev, isTerminalVisible: true }));
+  };
+
+  const hideTerminal = () => {
+    setSettings(prev => ({ ...prev, isTerminalVisible: false }));
   };
 
   const updatePanelSize = (size: number) => {
@@ -50,6 +69,9 @@ export const useCompilerSettings = () => {
     updateUiSize,
     updateEditorTheme,
     toggleClassroomView,
-    updatePanelSize
+    updatePanelSize,
+    toggleTerminalVisibility,
+    showTerminal,
+    hideTerminal
   };
 };

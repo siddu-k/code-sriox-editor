@@ -1,14 +1,37 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { ProgrammingLanguage } from '@/types/compiler';
 import { LANGUAGES } from '@/constants/languages';
+import { createShareLink, getSharedCode, cleanupExpiredLinks } from '@/services/codeShareService';
+import { useSearchParams } from 'react-router-dom';
 
 export const useCompiler = () => {
   const [language, setLanguage] = useState<ProgrammingLanguage>(LANGUAGES[0]);
   const [code, setCode] = useState<string>(language.defaultCode);
   const [output, setOutput] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [searchParams] = useSearchParams();
+
+  // Check for shared code on component mount
+  useEffect(() => {
+    const shareId = searchParams.get('share');
+    if (shareId) {
+      const sharedCode = getSharedCode(shareId);
+      if (sharedCode) {
+        // Find the language
+        const selectedLang = LANGUAGES.find(l => l.name === sharedCode.language) || LANGUAGES[0];
+        setLanguage(selectedLang);
+        setCode(sharedCode.code);
+        toast.success('Code loaded from shared link');
+      } else {
+        toast.error('Shared link has expired or is invalid');
+      }
+    }
+    
+    // Clean up expired links
+    cleanupExpiredLinks();
+  }, [searchParams]);
 
   const handleLanguageChange = (langName: string) => {
     const selectedLang = LANGUAGES.find(l => l.name === langName);
@@ -27,9 +50,27 @@ export const useCompiler = () => {
       .then(() => {
         toast.success('Code copied to clipboard!');
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error('Copy failed', error);
         toast.error('Failed to copy code. Please try manually selecting and copying.');
       });
+  };
+
+  const handleCodeShare = () => {
+    try {
+      const shareUrl = createShareLink(code, language.name);
+      navigator.clipboard.writeText(shareUrl)
+        .then(() => {
+          toast.success('Share link copied to clipboard! Link expires after 48 hours.');
+        })
+        .catch(() => {
+          toast.info('Share link created but couldn\'t copy to clipboard. Link expires after 48 hours.');
+        });
+      return shareUrl;
+    } catch (error) {
+      toast.error('Failed to create share link');
+      return null;
+    }
   };
 
   const handleCodeDownload = () => {
@@ -94,6 +135,7 @@ export const useCompiler = () => {
     handleCodeChange,
     handleCodeCopy,
     handleCodeDownload,
-    handleCodeSubmit
+    handleCodeSubmit,
+    handleCodeShare
   };
 };

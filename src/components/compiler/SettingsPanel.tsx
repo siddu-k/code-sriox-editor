@@ -4,9 +4,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { LayoutPanelTop } from 'lucide-react';
+import { LayoutPanelTop, Terminal } from 'lucide-react';
 import { EDITOR_THEMES } from '@/constants/languages';
 import { CompilerSettings } from '@/types/compiler';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface SettingsPanelProps {
   settings: CompilerSettings;
@@ -14,6 +16,7 @@ interface SettingsPanelProps {
   onUpdateTheme: (theme: string) => void;
   onToggleView: () => void;
   onUpdatePanelSize: (size: number) => void;
+  onToggleTerminal: () => void;
 }
 
 const SettingsPanel: React.FC<SettingsPanelProps> = ({
@@ -21,7 +24,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onUpdateUiSize,
   onUpdateTheme,
   onToggleView,
-  onUpdatePanelSize
+  onUpdatePanelSize,
+  onToggleTerminal
 }) => {
   return (
     <Tabs defaultValue="general" className="w-full">
@@ -47,6 +51,18 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
             <span>Default</span>
             <span>Large</span>
           </div>
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label htmlFor="terminal-toggle">Terminal Visibility</Label>
+            <div className="text-xs text-muted-foreground">Show or hide the terminal</div>
+          </div>
+          <Switch
+            id="terminal-toggle"
+            checked={settings.isTerminalVisible}
+            onCheckedChange={onToggleTerminal}
+          />
         </div>
       </TabsContent>
       

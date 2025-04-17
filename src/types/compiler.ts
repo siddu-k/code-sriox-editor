@@ -20,4 +20,12 @@ export interface CompilerSettings {
   editorTheme: EditorTheme;
   isClassroomView: boolean;
   panelSize: number;
+  isTerminalVisible: boolean;
+}
+
+export interface CodeShareLink {
+  id: string;
+  code: string;
+  language: string;
+  expiresAt: Date;
 }
